@@ -54,15 +54,23 @@ def calculate_averages():
             # Remove self-vote
             votes = votes_df[participant].copy()
             votes.loc[votes_df['token'] == token] = None
-            votes_list = votes.dropna().tolist()  # 7 votes excluding self
-            avg = round(sum(votes_list) / len(votes_list), 2)
+            votes_list = votes.dropna().tolist()  # existing votes only
+
+            # Pad missing votes with None to always have 7 vote columns
+            votes_list += [None] * (7 - len(votes_list))
+
+            # Calculate average from available votes only
+            actual_votes = [v for v in votes_list if v is not None]
+            avg = round(sum(actual_votes) / len(actual_votes), 2) if actual_votes else None
+
+            # Add row: participant + 7 votes + average
             final_data.append([participant] + votes_list + [avg])
 
-    # Create final dataframe: 1 name + 7 votes + 1 average = 9 columns
+    # Create final dataframe with 9 columns
     columns = ['Participant'] + [f'Vote{i+1}' for i in range(7)] + ['Average']
     final_df = pd.DataFrame(final_data, columns=columns)
 
-    # Save single CSV
+    # Save CSV
     final_df.to_csv("peer_votes_and_avg.csv", index=False)
 
     return final_df.to_json()
