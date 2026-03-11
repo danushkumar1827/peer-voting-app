@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Peer Voting</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        label { display: block; margin-top: 10px; }
+        select { width: 60px; }
+        button { margin-top: 20px; padding: 10px 15px; }
+    </style>
+</head>
+<body>
+    <h1>Peer Evaluation</h1>
+    <form id="voteForm">
+        <label>Enter your token:
+            <input type="text" name="token" required>
+        </label>
+
+        <!-- Voting options for each participant -->
+        <label>Smit
+            <select name="Smit"></select>
+        </label>
+        <label>Jaheer
+            <select name="Jaheer"></select>
+        </label>
+        <label>Abdul
+            <select name="Abdul"></select>
+        </label>
+        <label>Danush
+            <select name="Danush"></select>
+        </label>
+        <label>Nawwar
+            <select name="Nawwar"></select>
+        </label>
+        <label>Sara
+            <select name="Sara"></select>
+        </label>
+        <label>Avinash
+            <select name="Avinash"></select>
+        </label>
+        <label>Saurab
+            <select name="Saurab"></select>
+        </label>
+
+        <button type="submit">Submit Votes</button>
+    </form>
+
+    <script>
+        // Populate all select fields with 3.00 - 6.00 in 0.25 increments
+        const selects = document.querySelectorAll('select');
+        for(let s of selects){
+            for(let v = 3.0; v <= 6.0; v += 0.25){
+                let option = document.createElement('option');
+                option.value = v.toFixed(2);
+                option.text = v.toFixed(2);
+                s.add(option);
+            }
+        }
+
+        document.getElementById('voteForm').addEventListener('submit', async function(e){
+            e.preventDefault();
+            let formData = new FormData(this);
+
+            // Check total votes ≤ 35
+            let total = 0;
+            for(let [k,v] of formData.entries()){
+                if(k !== "token") total += parseFloat(v);
+            }
+            if(total > 35){
+                alert("Total votes cannot exceed 35!");
+                return;
+            }
+
+            // Send votes to backend
+            const resp = await fetch("/submit_vote", {
+                method: "POST",
+                body: formData
+            });
+            const result = await resp.json();
+            alert(result.message || "Vote submitted!");
+        });
+    </script>
+</body>
+</html>
