@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, send_file
 import sqlite3
 import pandas as pd
 import os
+import math
 
 app = Flask(__name__)
 
@@ -36,7 +37,11 @@ def submit_vote():
     conn.close()
     return jsonify({'status': 'success', 'message': 'Vote submitted successfully!'})
 
-# Calculate votes and averages, keep all votes in CSV, average excludes self
+# Helper function: round to nearest 0.25
+def round_to_025(x):
+    return round(x * 4) / 4
+
+# Calculate votes and averages, keep all votes in CSV, average excludes self, rounded to nearest 0.25
 @app.route('/calculate_averages', methods=['GET'])
 def calculate_averages():
     conn = sqlite3.connect('database.db')
@@ -58,9 +63,10 @@ def calculate_averages():
             votes_for_avg = votes_df[participant].copy()
             votes_for_avg.loc[votes_df['token'] == token] = None
             actual_votes = votes_for_avg.dropna().tolist()
-            avg = round(sum(actual_votes) / len(actual_votes), 2) if actual_votes else None
 
-            # Pad CSV votes to 8 participants if needed (to always have 8 vote columns)
+            avg = round_to_025(sum(actual_votes) / len(actual_votes)) if actual_votes else None
+
+            # Pad CSV votes to 8 participants if needed
             votes_csv += [None] * (8 - len(votes_csv))
 
             final_data.append([participant] + votes_csv + [avg])
