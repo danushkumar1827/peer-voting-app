@@ -36,7 +36,7 @@ def submit_vote():
     conn.close()
     return jsonify({'status': 'success', 'message': 'Vote submitted successfully!'})
 
-# Calculate votes and averages, remove self-vote, save single CSV
+# Calculate votes and averages, keep all votes in CSV, average excludes self
 @app.route('/calculate_averages', methods=['GET'])
 def calculate_averages():
     conn = sqlite3.connect('database.db')
@@ -51,23 +51,22 @@ def calculate_averages():
         token = row['token']
 
         if participant in votes_df.columns:
-            # Remove self-vote
-            votes = votes_df[participant].copy()
-            votes.loc[votes_df['token'] == token] = None
-            votes_list = votes.dropna().tolist()  # existing votes only
+            # All votes for CSV
+            votes_csv = votes_df[participant].tolist()
 
-            # Pad missing votes with None to always have 7 vote columns
-            votes_list += [None] * (7 - len(votes_list))
-
-            # Calculate average from available votes only
-            actual_votes = [v for v in votes_list if v is not None]
+            # Remove self-vote only for average calculation
+            votes_for_avg = votes_df[participant].copy()
+            votes_for_avg.loc[votes_df['token'] == token] = None
+            actual_votes = votes_for_avg.dropna().tolist()
             avg = round(sum(actual_votes) / len(actual_votes), 2) if actual_votes else None
 
-            # Add row: participant + 7 votes + average
-            final_data.append([participant] + votes_list + [avg])
+            # Pad CSV votes to 8 participants if needed (to always have 8 vote columns)
+            votes_csv += [None] * (8 - len(votes_csv))
 
-    # Create final dataframe with 9 columns
-    columns = ['Participant'] + [f'Vote{i+1}' for i in range(7)] + ['Average']
+            final_data.append([participant] + votes_csv + [avg])
+
+    # Columns: Participant + 8 votes + Average
+    columns = ['Participant'] + [f'Vote{i+1}' for i in range(8)] + ['Average']
     final_df = pd.DataFrame(final_data, columns=columns)
 
     # Save CSV
