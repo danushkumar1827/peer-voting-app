@@ -57,3 +57,15 @@ def calculate_averages():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+from flask import send_file
+
+@app.route('/download_csv', methods=['GET'])
+def download_csv():
+    try:
+        return send_file("peer_averages.csv",
+                         mimetype="text/csv",
+                         download_name="peer_averages.csv",
+                         as_attachment=True)
+    except Exception as e:
+        return str(e)
