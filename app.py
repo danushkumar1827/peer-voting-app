@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 import sqlite3
 import pandas as pd
+import os
 
 app = Flask(__name__)
 
-# Serve the voting page
+# Serve voting page
 @app.route('/')
 def vote_page():
     return render_template('vote.html')
@@ -47,22 +48,15 @@ def calculate_averages():
     for idx, row in token_mapping.iterrows():
         participant = row['participant_name']
         token = row['token']
-        if participant in votes_df.columns and token in votes_df['token'].values:
-            votes_df.loc[votes_df['token']==token, participant] = pd.NA
+        if participant in votes_df.columns:
+            votes_df.loc[votes_df['token'] == token, participant] = None
 
     votes_df = votes_df.drop(columns=['token'])
-    averages = votes_df.mean()
+    averages = votes_df.mean().round(2)
     averages.to_csv("peer_averages.csv", header=True)
     return averages.to_json()
 
-import os
-
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # Use Render's PORT or default to 5000
-    app.run(host="0.0.0.0", port=port, debug=True)
-
-from flask import send_file
-
+# Download CSV
 @app.route('/download_csv', methods=['GET'])
 def download_csv():
     try:
@@ -72,3 +66,7 @@ def download_csv():
                          as_attachment=True)
     except Exception as e:
         return str(e)
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
